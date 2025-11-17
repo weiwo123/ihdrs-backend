@@ -1,25 +1,36 @@
-// PageResult.java - 分页结果类
+// PageResult.java
 package com.ihdrs.backend.common;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
 import java.util.List;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class PageResult<T> {
 
-    private List<T> records;
+    private List<T> list;
     private Long total;
     private Long size;
     private Long current;
     private Long pages;
 
-    public static <T> PageResult<T> of(List<T> records, Long total, Long size, Long current) {
-        Long pages = (total + size - 1) / size; // 计算总页数
-        return new PageResult<>(records, total, size, current, pages);
+    /**
+     * 静态工厂方法
+     */
+    public static <T> PageResult<T> of(List<T> list, Long total, Long size, Long current) {
+        PageResult<T> result = new PageResult<>();
+        result.setList(list);       // ✅ 使用 setList
+        result.setTotal(total);
+        result.setSize(size);
+        result.setCurrent(current);
+        // 计算总页数
+        result.setPages((total + size - 1) / size);
+        return result;
+    }
+
+    /**
+     * 空结果
+     */
+    public static <T> PageResult<T> empty() {
+        return PageResult.of(List.of(), 0L, 10L, 1L);
     }
 }

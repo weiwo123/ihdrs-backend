@@ -1,4 +1,4 @@
-// UserResponse.java - 用户响应
+// UserResponse.java
 package com.ihdrs.backend.dto.response;
 
 import lombok.AllArgsConstructor;
@@ -23,4 +23,5 @@ public class UserResponse {
     private Integer loginCount;
     private Boolean status;
     private LocalDateTime createTime;
+
 }

@@ -16,7 +16,6 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
-// 当前登录用户ID（防止禁用自己）
 const currentUserId = ref(null)
 
 // 日志弹窗
@@ -36,22 +35,33 @@ const selectedUser = ref(null)
 const fetchUserList = async () => {
   try {
     loading.value = true
+
     const params = {
       page: currentPage.value,
-      size: pageSize.value,
-      search: searchQuery.value,
-      role: filterRole.value,
-      status: filterStatus.value
+      size: pageSize.value
     }
 
+    // 只有非空值才添加到参数中
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    if (filterRole.value !== null && filterRole.value !== '') {
+      params.role = filterRole.value
+    }
+    if (filterStatus.value !== null && filterStatus.value !== '') {
+      params.status = filterStatus.value
+    }
+
+    console.log('搜索参数:', params)
+
     const response = await getUserList(params)
-    userList.value = response.data.records
+    userList.value = response.data.list
     total.value = response.data.total
 
-    // 获取当前用户ID（假设从localStorage获取）
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     currentUserId.value = userInfo.userId
   } catch (error) {
+    console.error('搜索错误:', error)
     ElMessage.error('获取用户列表失败')
   } finally {
     loading.value = false
@@ -60,12 +70,24 @@ const fetchUserList = async () => {
 
 // 搜索
 const handleSearch = () => {
+  const hasSearchCondition =
+      searchQuery.value ||
+      filterRole.value !== null && filterRole.value !== undefined ||
+      filterStatus.value !== null && filterStatus.value !== undefined
+
+  if (!hasSearchCondition) {
+    ElMessage.info('请输入搜索关键词或选择筛选条件')
+    return
+  }
+
   currentPage.value = 1
   fetchUserList()
 }
 
 // 角色变更
-const handleRoleChange = async (user) => {
+const handleRoleChange = async (user, newRole) => {
+  const oldRole = user.role
+
   try {
     await ElMessageBox.confirm(
         `确定要将 ${user.username} 的角色改为 ${user.role === 'ADMIN' ? '管理员' : '普通用户'} 吗？`,
@@ -77,19 +99,20 @@ const handleRoleChange = async (user) => {
         }
     )
 
-    await updateUserRole(user.userId, user.role)
+    await updateUserRole(user.userId, newRole)
     ElMessage.success('角色更新成功')
-    fetchUserList()
+    await fetchUserList()
   } catch (error) {
+    user.role = oldRole
     if (error !== 'cancel') {
       ElMessage.error('角色更新失败')
-      fetchUserList() // 刷新列表恢复原状态
     }
   }
 }
 
 // 状态变更
 const handleStatusChange = async (user) => {
+  const oldStatus = user.status
   try {
     await ElMessageBox.confirm(
         `确定要${user.status ? '启用' : '禁用'} ${user.username} 吗？`,
@@ -106,8 +129,8 @@ const handleStatusChange = async (user) => {
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('状态更新失败')
-      fetchUserList() // 刷新列表恢复原状态
     }
+    await fetchUserList() // 刷新列表恢复原状态
   }
 }
 
@@ -139,7 +162,7 @@ const fetchUserLogs = async () => {
       page: logCurrentPage.value,
       size: logPageSize.value
     })
-    userLogs.value = response.data.records
+    userLogs.value = response.data.list
     logTotal.value = response.data.total
   } catch (error) {
     ElMessage.error('获取用户日志失败')
@@ -206,7 +229,7 @@ onMounted(() => {
           class="filter-select"
           @change="handleSearch"
       >
-        <el-option label="全部角色" value="" />
+        <el-option label="全部角色" value="null" />
         <el-option label="管理员" value="ADMIN" />
         <el-option label="普通用户" value="USER" />
       </el-select>
@@ -218,7 +241,7 @@ onMounted(() => {
           class="filter-select"
           @change="handleSearch"
       >
-        <el-option label="全部状态" value="" />
+        <el-option label="全部状态" value="null" />
         <el-option label="正常" :value="true" />
         <el-option label="禁用" :value="false" />
       </el-select>
@@ -258,9 +281,9 @@ onMounted(() => {
         <el-table-column prop="role" label="角色" width="120">
           <template #default="{ row }">
             <el-select
-                v-model="row.role"
+                :model-value="row.role"
                 size="small"
-                @change="handleRoleChange(row)"
+                @change="(newRole) => handleRoleChange(row, newRole)"
                 :disabled="row.userId === currentUserId"
             >
               <el-option label="普通用户" value="USER" />
@@ -269,7 +292,7 @@ onMounted(() => {
           </template>
         </el-table-column>
 
-        <el-table-column prop="status" label="状态" width="150">
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-switch
                 v-model="row.status"
@@ -417,7 +440,6 @@ onMounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* 深色模式：保持渐变背景，但调暗 */
 html.dark .user-management {
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
 }
@@ -447,7 +469,6 @@ html.dark .user-management {
   backdrop-filter: blur(10px);
 }
 
-/* 深色模式：搜索筛选区 - 半透明深色 */
 html.dark .filter-section {
   background: rgba(30, 41, 59, 0.8);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -472,7 +493,6 @@ html.dark .filter-section {
   backdrop-filter: blur(10px);
 }
 
-/* 深色模式：表格区域 - 半透明深色 */
 html.dark .table-section {
   background: rgba(30, 41, 59, 0.8);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -496,7 +516,6 @@ html.dark .table-section {
   padding: 20px 0;
 }
 
-/* Element Plus 表格深色模式适配 */
 html.dark :deep(.el-table) {
   --el-table-bg-color: transparent;
   --el-table-tr-bg-color: transparent;
@@ -546,7 +565,6 @@ html.dark :deep(.el-switch__label) {
   padding: 20px 30px;
 }
 
-/* 深色模式：弹窗适配 */
 html.dark :deep(.el-dialog) {
   --el-dialog-bg-color: rgba(30, 41, 59, 0.95);
   --el-text-color-primary: #e2e8f0;
@@ -562,7 +580,6 @@ html.dark :deep(.el-dialog__title) {
   color: #f1f5f9;
 }
 
-/* 深色模式：输入框和选择器 */
 html.dark :deep(.el-input__wrapper) {
   background-color: rgba(51, 65, 85, 0.5);
   box-shadow: 0 0 0 1px rgba(100, 116, 139, 0.3) inset;
@@ -605,7 +622,6 @@ html.dark :deep(.el-select-dropdown__item.is-selected) {
   background-color: rgba(129, 140, 248, 0.1);
 }
 
-/* 深色模式：按钮适配 */
 html.dark :deep(.el-button--primary) {
   --el-button-bg-color: #667eea;
   --el-button-border-color: #667eea;
@@ -621,7 +637,6 @@ html.dark :deep(.el-button.is-link:hover) {
   color: #c7d2fe;
 }
 
-/* 深色模式：分页器适配 */
 html.dark :deep(.el-pagination) {
   --el-pagination-bg-color: transparent;
   --el-pagination-text-color: #e2e8f0;
@@ -658,7 +673,6 @@ html.dark :deep(.el-pagination__sizes .el-select .el-input__wrapper) {
   background-color: rgba(51, 65, 85, 0.5);
 }
 
-/* 深色模式：描述列表适配 */
 html.dark :deep(.el-descriptions__label) {
   color: #94a3b8;
 }
@@ -680,7 +694,6 @@ html.dark :deep(.el-descriptions__header) {
   background-color: rgba(51, 65, 85, 0.3);
 }
 
-/* 深色模式：标签适配 */
 html.dark :deep(.el-tag) {
   border-color: rgba(100, 116, 139, 0.3);
   background-color: rgba(51, 65, 85, 0.5);
@@ -710,7 +723,6 @@ html.dark :deep(.el-tag--danger) {
   color: #fff;
 }
 
-/* 深色模式：消息框适配 */
 html.dark :deep(.el-message-box) {
   background-color: rgba(30, 41, 59, 0.95);
   border: 1px solid rgba(100, 116, 139, 0.3);
@@ -729,7 +741,6 @@ html.dark :deep(.el-message-box__message) {
   color: #e2e8f0;
 }
 
-/* 深色模式：开关按钮 */
 html.dark :deep(.el-switch.is-checked .el-switch__core) {
   background-color: #667eea;
 }

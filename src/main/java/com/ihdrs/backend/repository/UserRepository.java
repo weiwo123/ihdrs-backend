@@ -39,16 +39,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsernameAndUserIdNot(String username, Long userId);
 
     /**
-     * 根据状态分页查询用户
-     */
-    Page<User> findByStatus(Boolean status, Pageable pageable);
-
-    /**
-     * 根据角色和状态查询用户
-     */
-    Page<User> findByRoleAndStatus(User.UserRole role, Boolean status, Pageable pageable);
-
-    /**
      * 查询指定时间段内注册的用户数量
      */
     @Query("SELECT COUNT(u) FROM User u WHERE u.createTime BETWEEN :startTime AND :endTime")
@@ -66,4 +56,52 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u WHERE u.username LIKE %:keyword% OR u.email LIKE %:keyword%")
     Page<User> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    // 仅搜索（用户名、邮箱、电话）
+    @Query("SELECT u FROM User u WHERE " +
+            "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "u.phone LIKE CONCAT('%', :search, '%')")
+    Page<User> findBySearch(@Param("search") String search, Pageable pageable);
+
+    // 仅角色筛选
+    Page<User> findByRole(User.UserRole role, Pageable pageable);
+
+    // 仅状态筛选
+    Page<User> findByStatus(Boolean status, Pageable pageable);
+
+    // 搜索 + 角色
+    @Query("SELECT u FROM User u WHERE " +
+            "(LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "u.phone LIKE CONCAT('%', :search, '%')) AND " +
+            "u.role = :role")
+    Page<User> findBySearchAndRole(@Param("search") String search,
+                                   @Param("role") User.UserRole role,
+                                   Pageable pageable);
+
+    // 搜索 + 状态
+    @Query("SELECT u FROM User u WHERE " +
+            "(LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "u.phone LIKE CONCAT('%', :search, '%')) AND " +
+            "u.status = :status")
+    Page<User> findBySearchAndStatus(@Param("search") String search,
+                                     @Param("status") Boolean status,
+                                     Pageable pageable);
+
+    // 角色 + 状态
+    Page<User> findByRoleAndStatus(User.UserRole role, Boolean status, Pageable pageable);
+
+    // 搜索 + 角色 + 状态（全部条件）
+    @Query("SELECT u FROM User u WHERE " +
+            "(LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "u.phone LIKE CONCAT('%', :search, '%')) AND " +
+            "u.role = :role AND " +
+            "u.status = :status")
+    Page<User> findBySearchAndRoleAndStatus(@Param("search") String search,
+                                            @Param("role") User.UserRole role,
+                                            @Param("status") Boolean status,
+                                            Pageable pageable);
 }
