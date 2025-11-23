@@ -219,11 +219,22 @@
         </el-form-item>
 
         <el-form-item label="模型类型" prop="modelType">
-          <el-select v-model="createDialog.form.modelType" placeholder="请选择模型类型">
-            <el-option label="CNN" value="CNN" />
-            <el-option label="Advanced CNN" value="ADVANCED_CNN" />
-            <el-option label="ResNet" value="RESNET" />
-            <el-option label="LeNet" value="LENET" />
+          <el-select
+              v-model="createDialog.form.modelType"
+              placeholder="请选择模型类型"
+              style="width: 260px"
+          >
+            <el-option
+                v-for="item in modelTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            >
+              <div class="model-option">
+                <span class="model-label">{{ item.label }}</span>
+                <span class="model-desc">{{ item.desc }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
 
@@ -305,6 +316,14 @@
 
         <el-form-item label="数据增强" prop="useAugmentation">
           <el-switch v-model="createDialog.form.useAugmentation" />
+        </el-form-item>
+
+        <el-form-item label="早停" prop="useEarlyStopping">
+          <el-switch v-model="createDialog.form.useEarlyStopping" />
+        </el-form-item>
+
+        <el-form-item label="学习率调度" prop="useLRScheduler">
+          <el-switch v-model="createDialog.form.useLRScheduler" />
         </el-form-item>
       </el-form>
 
@@ -472,6 +491,43 @@ const statistics = ref({
   avgAccuracy: 0
 })
 
+const modelTypeOptions = [
+  {
+    label: '基础 CNN',
+    value: 'cnn_basic'
+  },
+  {
+    label: '高级 CNN',
+    value: 'cnn_advanced'
+  },
+  {
+    label: '深度 CNN',
+    value: 'cnn_deep'
+  },
+  {
+    label: 'ResNet 风格 CNN',
+    value: 'cnn_resnet'
+  },
+  {
+    label: 'MLP 全连接',
+    value: 'mlp'
+  }
+]
+
+const modelTypeTextMap = {
+  cnn_basic: '基础 CNN',
+  cnn_advanced: '高级 CNN',
+  cnn_deep: '深度 CNN',
+  cnn_resnet: 'ResNet 风格 CNN',
+  mlp: 'MLP 全连接'
+}
+
+const datasetTextMap = {
+  MNIST: 'MNIST 手写数字',
+  FASHION_MNIST: 'Fashion-MNIST 服饰',
+  CIFAR10: 'CIFAR-10 彩色图片'
+}
+
 const filterForm = reactive({
   keyword: '',
   status: ''
@@ -489,7 +545,7 @@ const createDialog = reactive({
   form: {
     taskName: '',
     datasetName: 'MNIST',
-    modelType: 'CNN',
+    modelType: 'cnn_basic',
     totalEpochs: 10,
     batchSize: 32,
     learningRate: '0.001',
@@ -499,7 +555,9 @@ const createDialog = reactive({
     dropout: '0.2',
     hiddenSize: 128,
     validationSplit: '0.2',
-    useAugmentation: false
+    useAugmentation: false,
+    useEarlyStopping: true,
+    useLRScheduler: false,
   },
   rules: {
     taskName: [
@@ -725,7 +783,7 @@ const showCreateDialog = () => {
   createDialog.form = {
     taskName: '',
     datasetName: 'MNIST',
-    modelType: 'CNN',
+    modelType: 'cnn_basic',
     totalEpochs: 10,
     batchSize: 32,
     learningRate: '0.001',
@@ -735,7 +793,9 @@ const showCreateDialog = () => {
     dropout: '0.2',
     hiddenSize: 128,
     validationSplit: '0.2',
-    useAugmentation: false
+    useAugmentation: false,
+    useEarlyStopping: true,
+    useLRScheduler: false
   }
 }
 

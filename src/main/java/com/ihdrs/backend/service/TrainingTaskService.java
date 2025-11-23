@@ -29,6 +29,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 @Slf4j
 @Service
@@ -259,45 +262,79 @@ public class TrainingTaskService {
 
     @Transactional
     public Result<Void> completeTask(Long taskId, Map<String, Object> resultData) {
-        TrainingTask task = taskRepository.findById(taskId).orElse(null);
-        if (task == null) {
-            return Result.error(404, "训练任务不存在");
+        log.info("收到训练完成回调, taskId={}, data={}", taskId, resultData);
+
+        try {
+            TrainingTask task = taskRepository.findById(taskId).orElse(null);
+            if (task == null) {
+                return Result.error(404, "训练任务不存在");
+            }
+
+            // ---- 安全地取数值，避免 ClassCastException ----
+            Double finalAccuracy = null;
+            Object accObj = resultData.get("finalAccuracy");
+            if (accObj instanceof Number) {
+                finalAccuracy = ((Number) accObj).doubleValue();
+            }
+
+            Double finalLoss = null;
+            Object lossObj = resultData.get("finalLoss");
+            if (lossObj instanceof Number) {
+                finalLoss = ((Number) lossObj).doubleValue();
+            }
+
+            String modelPath = (String) resultData.get("modelPath");
+
+            Integer trainingSamples = null;
+            Object trainSamplesObj = resultData.get("trainingSamples");
+            if (trainSamplesObj instanceof Number) {
+                trainingSamples = ((Number) trainSamplesObj).intValue();
+            }
+
+            Integer testSamples = null;
+            Object testSamplesObj = resultData.get("testSamples");
+            if (testSamplesObj instanceof Number) {
+                testSamples = ((Number) testSamplesObj).intValue();
+            }
+
+            Long modelSize = null;
+            Object modelSizeObj = resultData.get("modelSize");
+            if (modelSizeObj instanceof Number) {
+                modelSize = ((Number) modelSizeObj).longValue();
+            }
+
+            // ---- 保存模型 ----
+            Model model = new Model();
+            model.setModelName(task.getTaskName());
+            model.setModelVersion("v1.0.0");
+            model.setModelPath(modelPath);
+            model.setAccuracy(finalAccuracy != null ? BigDecimal.valueOf(finalAccuracy) : null);
+            model.setLoss(finalLoss != null ? BigDecimal.valueOf(finalLoss) : null);
+            model.setTrainingSamples(trainingSamples);
+            model.setTestSamples(testSamples);
+            model.setModelSize(modelSize);
+            model.setCreatorId(task.getCreatorId());
+            model.setStatus(Model.ModelStatus.COMPLETED);
+
+            modelRepository.save(model);
+
+            // ---- 更新任务状态 ----
+            task.setStatus(TrainingTask.TaskStatus.COMPLETED);
+            task.setProgress(new BigDecimal("100.00"));
+            task.setFinalAccuracy(model.getAccuracy());
+            task.setFinalLoss(model.getLoss());
+            task.setEndTime(LocalDateTime.now());
+            task.setModelId(model.getModelId());
+
+            taskRepository.save(task);
+
+            log.info("训练任务完成处理成功, taskId={}, modelId={}", taskId, model.getModelId());
+            return Result.success(null);
+
+        } catch (Exception e) {
+            log.error("处理训练完成回调失败, taskId=" + taskId, e);
+            return Result.error(500, "处理训练完成回调失败: " + e.getMessage());
         }
-
-        Double finalAccuracy = (Double) resultData.get("finalAccuracy");
-        Double finalLoss = (Double) resultData.get("finalLoss");
-        String modelPath = (String) resultData.get("modelPath");
-        Integer trainingSamples = resultData.get("trainingSamples") != null
-                ? ((Number) resultData.get("trainingSamples")).intValue() : null;
-
-        Integer testSamples = resultData.get("testSamples") != null
-                ? ((Number) resultData.get("testSamples")).intValue() : null;
-
-        Long modelSize = resultData.get("modelSize") != null
-                ? ((Number) resultData.get("modelSize")).longValue() : null;
-
-        Model model = new Model();
-        model.setModelName(task.getTaskName());
-        model.setModelVersion("v" + "1.0.0");
-        model.setModelPath(modelPath);
-        model.setAccuracy(finalAccuracy != null ? BigDecimal.valueOf(finalAccuracy) : null);
-        model.setLoss(finalLoss != null ? BigDecimal.valueOf(finalLoss) : null);
-        model.setTrainingSamples(trainingSamples);
-        model.setTestSamples(testSamples);
-        model.setModelSize(modelSize);
-        model.setCreatorId(task.getCreatorId());
-        model.setStatus(Model.ModelStatus.COMPLETED);
-        modelRepository.save(model);
-
-        task.setStatus(TrainingTask.TaskStatus.COMPLETED);
-        task.setProgress(new BigDecimal("100.00"));
-        task.setFinalAccuracy(model.getAccuracy());
-        task.setFinalLoss(model.getLoss());
-        task.setEndTime(LocalDateTime.now());
-        task.setModelId(model.getModelId());
-        taskRepository.save(task);
-
-        return Result.success(null);
     }
 
 
@@ -318,20 +355,100 @@ public class TrainingTaskService {
 
 
     private String buildTrainingConfig(TrainingTaskRequest request) {
+        // 防守式处理，避免 NPE
+        BigDecimal lr = request.getLearningRate() != null
+                ? request.getLearningRate()
+                : new BigDecimal("0.001");
+        BigDecimal dropout = request.getDropout() != null
+                ? request.getDropout()
+                : new BigDecimal("0.0");
+        Integer batchSize = request.getBatchSize() != null
+                ? request.getBatchSize()
+                : 32;
+        Integer totalEpochs = request.getTotalEpochs() != null
+                ? request.getTotalEpochs()
+                : 10;
+
+        Boolean useEarlyStopping = request.getUseEarlyStopping() != null
+                ? request.getUseEarlyStopping()
+                : Boolean.TRUE;
+        Boolean useLRScheduler = request.getUseLRScheduler() != null
+                ? request.getUseLRScheduler()
+                : Boolean.FALSE;
+
+        String modelType = request.getModelType() != null
+                ? request.getModelType()
+                : "cnn_basic";
+
+        String datasetName = request.getDatasetName() != null
+                ? request.getDatasetName()
+                : "MNIST";
+
+        Boolean useAug = request.getUseAugmentation() != null
+                ? request.getUseAugmentation()
+                : Boolean.FALSE;
+
+        BigDecimal valSplit = request.getValidationSplit() != null
+                ? request.getValidationSplit()
+                : new BigDecimal("0.2");
+
+        // 这里用一串 String.format，构造嵌套 JSON
         return String.format(
-                "{\"learningrate\": \"%s\", \"batchsize\": %d, \"epochs\": %d, \"optimizer\": \"%s\", " +
-                        "\"lossfunction\": \"%s\", \"modeltype\": \"%s\", \"hiddensize\": %d, \"activation\": \"%s\", \"dropout\": \"%s\"}",
-                request.getLearningRate(),
-                request.getBatchSize(),
-                request.getTotalEpochs(),
+                "{"
+                        + "\"hyperparameters\": {"
+                        +   "\"epochs\": %d,"
+                        +   "\"totalEpochs\": %d,"
+                        +   "\"batchSize\": %d,"
+                        +   "\"batchsize\": %d,"
+                        +   "\"learningRate\": \"%s\","
+                        +   "\"learningrate\": \"%s\","
+                        +   "\"optimizer\": \"%s\","
+                        +   "\"lossFunction\": \"%s\","
+                        +   "\"lossfunction\": \"%s\","
+                        +   "\"modelType\": \"%s\","
+                        +   "\"hiddenSize\": %d,"
+                        +   "\"activation\": \"%s\","
+                        +   "\"dropout\": \"%s\","
+                        +   "\"useEarlyStopping\": %s,"
+                        +   "\"useLRScheduler\": %s"
+                        + "},"
+                        + "\"dataset\": {"
+                        +   "\"name\": \"%s\","
+                        +   "\"datasetName\": \"%s\","
+                        +   "\"datasetname\": \"%s\","
+                        +   "\"useAugmentation\": %s,"
+                        +   "\"useaugmentation\": %s,"
+                        +   "\"validationSplit\": \"%s\","
+                        +   "\"validationsplit\": \"%s\""
+                        + "}"
+                        + "}",
+                // hyperparameters 部分
+                totalEpochs,
+                totalEpochs,
+                batchSize,
+                batchSize,
+                lr.toPlainString(),
+                lr.toPlainString(),
                 request.getOptimizer(),
                 request.getLossFunction(),
-                request.getModelType(),
+                request.getLossFunction(),
+                modelType,
                 request.getHiddenSize(),
                 request.getActivation(),
-                request.getDropout()
+                dropout.toPlainString(),
+                useEarlyStopping,
+                useLRScheduler,
+                // dataset 部分
+                datasetName,
+                datasetName,
+                datasetName,
+                useAug,
+                useAug,
+                valSplit.toPlainString(),
+                valSplit.toPlainString()
         );
     }
+
 
     private String buildDatasetConfig(TrainingTaskRequest request) {
         return String.format(

@@ -23,7 +23,7 @@ public class TrainingTaskRequest {
     private BigDecimal validationSplit = new BigDecimal("0.2");
 
     // 模型配置
-    private String modelType = "CNN";
+    private String modelType = "cnn_basic";
     private Integer hiddenSize = 128;
     private String activation = "relu";
     private BigDecimal dropout = new BigDecimal("0.2");
@@ -33,6 +33,10 @@ public class TrainingTaskRequest {
     private Integer batchSize = 32;
     private String optimizer = "adam";
     private String lossFunction = "categorical_crossentropy";
+
+    private Boolean useEarlyStopping = true;
+
+    private Boolean useLRScheduler = false;
 
     private String description; // 任务描述
 }
