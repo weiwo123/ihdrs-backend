@@ -2,14 +2,35 @@
 
 <template>
   <div class="dataset-upload-container">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <el-button icon="ArrowLeft" @click="goBack">返回</el-button>
-      <h2>上传数据集</h2>
+    <!-- 动态背景粒子效果 -->
+    <div class="background-particles">
+      <div v-for="i in 20" :key="i" class="particle" :style="getParticleStyle(i)"></div>
     </div>
 
-    <!-- 上传表单 -->
-    <el-card class="upload-card">
+    <!-- 背景装饰圆形 -->
+    <div class="background-circles">
+      <div class="circle circle-top"></div>
+      <div class="circle circle-bottom"></div>
+      <div class="circle circle-middle"></div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-wrapper">
+      <!-- 头部Logo区域 -->
+      <div class="header-section">
+        <div class="logo-container">
+          <div class="logo-circle">
+            <el-icon size="50" color="#2563eb">
+              <UploadFilled />
+            </el-icon>
+          </div>
+        </div>
+        <h1 class="header-title">上传数据集</h1>
+        <p class="header-subtitle">Dataset Upload</p>
+      </div>
+
+      <!-- 上传表单 -->
+      <el-card class="upload-card modern-card" shadow="hover">
       <template #header>
         <div class="card-header">
           <span>数据集信息</span>
@@ -133,6 +154,7 @@ dataset.zip
         </el-button>
       </div>
     </el-card>
+    </div>
   </div>
 </template>
 
@@ -168,6 +190,25 @@ const formRules = {
   datasetType: [
     { required: true, message: '请选择数据集类型', trigger: 'change' }
   ]
+}
+
+// 粒子效果样式
+const getParticleStyle = (index) => {
+  const size = Math.random() * 3 + 1
+  const x = Math.random() * 100
+  const y = Math.random() * 100
+  const duration = Math.random() * 3 + 2
+  const delay = Math.random() * 2
+
+  return {
+    width: `${size}px`,
+    height: `${size}px`,
+    left: `${x}%`,
+    top: `${y}%`,
+    animationDuration: `${duration}s`,
+    animationDelay: `${delay}s`,
+    opacity: Math.random() * 0.3 + 0.1
+  }
 }
 
 // 计算属性
@@ -284,34 +325,176 @@ function startUpload() {
 
 <style scoped lang="scss">
 .dataset-upload-container {
-  padding: 20px;
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 60px);
-}
+  position: relative;
+  min-height: 100vh;
+  padding: 24px;
+  padding-bottom: 60px;
+  overflow: visible;
+  width: 100%;
+  box-sizing: border-box;
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  // 背景粒子效果
+  .background-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
 
-  h2 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: #303133;
+    .particle {
+      position: absolute;
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      animation: float-particle infinite ease-in-out;
+    }
   }
-}
 
-.upload-card {
-  max-width: 800px;
-  margin: 0 auto;
+  // 背景装饰圆形
+  .background-circles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
 
-  .card-header {
-    font-size: 18px;
-    font-weight: 600;
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float-circle 20s ease-in-out infinite;
+
+      &.circle-top {
+        width: 600px;
+        height: 600px;
+        background: rgba(147, 197, 253, 0.2);
+        top: -200px;
+        right: -150px;
+      }
+
+      &.circle-bottom {
+        width: 500px;
+        height: 500px;
+        background: rgba(191, 219, 254, 0.2);
+        bottom: -150px;
+        left: -100px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+      }
+
+      &.circle-middle {
+        width: 400px;
+        height: 400px;
+        background: rgba(224, 242, 254, 0.3);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-duration: 30s;
+      }
+    }
   }
-}
+
+  // 内容区域
+  .content-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  // 头部Logo区域
+  .header-section {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-top: 10px;
+
+    .logo-container {
+      margin-bottom: 10px;
+
+      .logo-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border: 3px solid rgba(59, 130, 246, 0.2);
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: scale(1.05);
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .el-icon {
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+      }
+    }
+
+    .header-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0 0 10px 0;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 1px;
+    }
+
+    .header-subtitle {
+      font-size: 18px;
+      color: #475569;
+      font-weight: 500;
+      margin: 0;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // 深色模式适配
+  html.dark & {
+    .header-title {
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .header-subtitle {
+      color: #e2e8f0;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  // 通用卡片样式
+  .modern-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      background: rgba(255, 255, 255, 0.98);
+    }
+  }
+
+  .upload-card {
+    .card-header {
+      font-size: 18px;
+      font-weight: 600;
+    }
+  }
 
 .upload-form {
   margin-top: 24px;
@@ -366,12 +549,32 @@ function startUpload() {
   }
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #f0f0f0;
+  }
+}
+
+// 动画效果
+@keyframes float-particle {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(20px, -20px);
+  }
+}
+
+@keyframes float-circle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
 }
 </style>

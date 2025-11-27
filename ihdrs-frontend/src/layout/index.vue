@@ -68,7 +68,7 @@
       </el-aside>
 
       <!-- 主体区域 -->
-      <el-container class="main-container">
+      <el-container :class="['main-container', { 'sidebar-collapsed': sidebarCollapsed }]">
         <!-- 顶部导航 -->
         <el-header class="navbar-container">
           <div class="navbar-left">
@@ -298,6 +298,101 @@ watch(route, (to) => {
 })
 </script>
 
+<style lang="scss">
+// 全局样式 - 折叠菜单居中
+.sidebar-container .el-menu--collapse {
+  width: 64px !important;
+
+  .el-menu-item,
+  .el-sub-menu__title {
+    padding: 0 !important;
+    margin: 4px 8px !important;
+    width: calc(100% - 16px) !important;
+    min-width: auto !important;
+    height: 56px !important;
+    line-height: 56px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+
+    & > * {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .el-icon {
+      position: absolute !important;
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      margin: 0 !important;
+      flex-shrink: 0;
+    }
+
+    span {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+    }
+  }
+
+  .el-sub-menu {
+    .el-sub-menu__title {
+      padding: 0 !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      position: relative !important;
+      text-align: center !important;
+
+      .el-icon {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin: 0 !important;
+      }
+
+      span {
+        display: none !important;
+        visibility: hidden !important;
+      }
+    }
+
+    .el-menu {
+      .el-menu-item {
+        padding: 0 !important;
+        margin: 4px 8px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        position: relative !important;
+        text-align: center !important;
+
+        .el-icon {
+          position: absolute !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          margin: 0 !important;
+        }
+
+        span {
+          display: none !important;
+          visibility: hidden !important;
+        }
+      }
+    }
+  }
+}
+</style>
+
 <style lang="scss" scoped>
 .app-wrapper {
   height: 100vh;
@@ -309,53 +404,256 @@ watch(route, (to) => {
 }
 
 .sidebar-container {
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 30%, #1e40af 60%, #1e3a8a 100%);
+  border-right: none;
   transition: width 0.3s;
-  box-shadow: 2px 0 6px rgba(0, 21, 41, 0.05);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1000;
+
+  // 背景装饰圆形 - 使用蓝色系，类似登录界面
+  &::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(147, 197, 253, 0.25) 0%, rgba(96, 165, 250, 0.15) 50%, transparent 100%);
+    top: -200px;
+    right: -150px;
+    z-index: 0;
+    filter: blur(40px);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(191, 219, 254, 0.2) 0%, rgba(147, 197, 253, 0.1) 50%, transparent 100%);
+    bottom: -150px;
+    left: -100px;
+    z-index: 0;
+    filter: blur(40px);
+  }
 
   .sidebar-header {
-    height: 60px;
+    position: relative;
+    z-index: 1;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid #e4e7ed;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(20px);
 
     .logo {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 12px;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: bold;
-      color: #409EFF;
+      color: #ffffff;
+      width: 100%;
 
       .logo-text {
         white-space: nowrap;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      :deep(.el-icon) {
+        color: #ffffff;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        flex-shrink: 0;
       }
     }
   }
 
   .sidebar-scrollbar {
-    height: calc(100% - 60px);
+    position: relative;
+    z-index: 1;
+    height: calc(100% - 80px);
+    background: transparent;
   }
 
   .sidebar-menu {
     border: none;
     height: 100%;
+    background: transparent !important;
+
+    // 折叠状态下的样式 - 使用更具体的选择器
+    :deep(.el-menu--collapse) {
+      width: 64px !important;
+
+      .el-menu-item,
+      .el-sub-menu__title {
+        padding: 0 !important;
+        margin: 4px 8px !important;
+        width: calc(100% - 16px) !important;
+        min-width: auto !important;
+        height: 56px !important;
+        line-height: 56px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        position: relative !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+
+        // 清除所有内部元素的 margin 和 padding
+        & > * {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        // 图标绝对居中
+        .el-icon {
+          position: absolute !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          margin: 0 !important;
+          flex-shrink: 0;
+          width: auto !important;
+          height: auto !important;
+        }
+
+        // 隐藏文字
+        span {
+          display: none !important;
+          visibility: hidden !important;
+          width: 0 !important;
+          height: 0 !important;
+          overflow: hidden !important;
+          opacity: 0 !important;
+        }
+      }
+
+      .el-sub-menu {
+        .el-sub-menu__title {
+          padding: 0 !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          position: relative !important;
+          text-align: center !important;
+
+          .el-icon {
+            position: absolute !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            margin: 0 !important;
+          }
+
+          span {
+            display: none !important;
+            visibility: hidden !important;
+          }
+        }
+
+        .el-menu {
+          .el-menu-item {
+            padding: 0 !important;
+            margin: 4px 8px !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            position: relative !important;
+            text-align: center !important;
+
+            .el-icon {
+              position: absolute !important;
+              left: 50% !important;
+              top: 50% !important;
+              transform: translate(-50%, -50%) !important;
+              margin: 0 !important;
+            }
+
+            span {
+              display: none !important;
+              visibility: hidden !important;
+            }
+          }
+        }
+      }
+    }
 
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
-      height: 50px;
-      line-height: 50px;
+      height: 56px;
+      line-height: 56px;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 4px 12px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding-left: 20px !important;
+      box-sizing: border-box;
 
       &:hover {
-        background-color: #f5f7fa;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.15) 100%) !important;
+        color: #ffffff;
+        transform: translateX(2px);
       }
 
       &.is-active {
-        background-color: #e6f7ff;
-        color: #409EFF;
-        border-right: 3px solid #409EFF;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.25) 100%) !important;
+        color: #ffffff;
+        border-right: none;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+      }
+
+      .el-icon {
+        color: inherit;
+        margin-right: 12px;
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+
+      span {
+        flex: 1;
+      }
+    }
+
+    :deep(.el-sub-menu) {
+      .el-sub-menu__title {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      &.is-opened .el-sub-menu__title {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+        color: #ffffff;
+      }
+
+      .el-menu {
+        background: rgba(0, 0, 0, 0.1) !important;
+
+        .el-menu-item {
+          padding-left: 56px !important;
+          color: rgba(255, 255, 255, 0.8);
+
+          &:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.15) 100%) !important;
+            color: #ffffff;
+          }
+
+          &.is-active {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.25) 100%) !important;
+            color: #ffffff;
+          }
+        }
       }
     }
   }
@@ -365,17 +663,27 @@ watch(route, (to) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  margin-left: 220px;
+  transition: margin-left 0.3s;
+  
+  // 当侧边栏折叠时调整左边距
+  &.sidebar-collapsed {
+    margin-left: 64px;
+  }
 }
 
 .navbar-container {
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
   height: 60px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 
   .navbar-left {
     display: flex;
@@ -438,9 +746,57 @@ watch(route, (to) => {
 }
 
 .app-main {
-  padding: 20px;
-  background: #f5f7fa;
-  overflow: auto;
+  position: relative;
+  padding: 0;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+
+  // 动态背景装饰 - 使用登录界面的蓝色系
+  &::before {
+    content: '';
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: rgba(147, 197, 253, 0.2);
+    top: -200px;
+    right: -150px;
+    z-index: 0;
+    animation: float 20s ease-in-out infinite;
+  }
+
+  &::after {
+    content: '';
+    position: fixed;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: rgba(191, 219, 254, 0.2);
+    bottom: -150px;
+    left: -100px;
+    z-index: 0;
+    animation: float 25s ease-in-out infinite reverse;
+  }
+
+  // 内容容器
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
 }
 
 // 过渡动画

@@ -2,112 +2,135 @@
 
 <template>
   <div class="training-management">
-    <!-- 顶部统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
-        <el-card class="stat-card primary">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32">
-                <DataAnalysis/>
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.totalTasks || 0 }}</div>
+    <!-- 动态背景粒子效果 -->
+    <div class="background-particles">
+      <div v-for="i in 20" :key="i" class="particle" :style="getParticleStyle(i)"></div>
+    </div>
+
+    <!-- 背景装饰圆形 -->
+    <div class="background-circles">
+      <div class="circle circle-top"></div>
+      <div class="circle circle-bottom"></div>
+      <div class="circle circle-middle"></div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-wrapper">
+      <!-- 头部Logo区域 -->
+      <div class="header-section">
+        <div class="logo-container">
+          <div class="logo-circle">
+            <el-icon size="50" color="#2563eb">
+              <Loading />
+            </el-icon>
+          </div>
+        </div>
+        <h1 class="header-title">训练任务管理</h1>
+        <p class="header-subtitle">Training Task Management</p>
+      </div>
+
+      <!-- 搜索筛选区域 -->
+      <el-card class="search-card modern-card" shadow="hover">
+        <el-form :model="filterForm" inline>
+          <el-form-item label="任务名称">
+            <el-input
+                v-model="filterForm.keyword"
+                placeholder="请输入任务名称"
+                clearable
+                style="width: 200px"
+                @keyup.enter="handleSearch"
+            >
+              <template #prefix>
+                <el-icon>
+                  <Search/>
+                </el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-form-item label="状态">
+            <el-select v-model="filterForm.status" placeholder="请选择状态" clearable style="width: 150px">
+              <el-option label="等待中" value="PENDING"/>
+              <el-option label="训练中" value="RUNNING"/>
+              <el-option label="已完成" value="COMPLETED"/>
+              <el-option label="已失败" value="FAILED"/>
+              <el-option label="已取消" value="CANCELLED"/>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
+            <el-button @click="resetFilter" :icon="Refresh">重置</el-button>
+            <el-button type="success" @click="showCreateDialog" :icon="Plus">新建训练任务</el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <!-- 顶部统计卡片 -->
+      <el-row :gutter="20" class="stats-row">
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card primary">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <DataAnalysis/>
+                </el-icon>
+              </div>
               <div class="stat-label">总任务数</div>
+              <div class="stat-value">{{ statistics.totalTasks || 0 }}</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
+        </el-col>
 
-      <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
-        <el-card class="stat-card success">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32">
-                <CircleCheck/>
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.completedTasks || 0 }}</div>
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card success">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <CircleCheck/>
+                </el-icon>
+              </div>
               <div class="stat-label">已完成</div>
+              <div class="stat-value">{{ statistics.completedTasks || 0 }}</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
+        </el-col>
 
-      <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
-        <el-card class="stat-card warning">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32">
-                <Loading/>
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.runningTasks || 0 }}</div>
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card warning">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <Loading/>
+                </el-icon>
+              </div>
               <div class="stat-label">训练中</div>
+              <div class="stat-value">{{ statistics.runningTasks || 0 }}</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
+        </el-col>
 
-      <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
-        <el-card class="stat-card info">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32">
-                <TrendCharts/>
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ (statistics.avgAccuracy * 100).toFixed(2) }}%</div>
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card danger">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <TrendCharts/>
+                </el-icon>
+              </div>
               <div class="stat-label">平均准确率</div>
+              <div class="stat-value">{{ (statistics.avgAccuracy * 100).toFixed(2) }}%</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </el-col>
+      </el-row>
 
-    <!-- 过滤器 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filterForm" class="filter-form">
-        <el-form-item label="任务名称">
-          <el-input
-              v-model="filterForm.keyword"
-              placeholder="请输入任务名称"
-              clearable
-              style="width: 200px"
-              @keyup.enter="handleSearch"
-          >
-            <template #prefix>
-              <el-icon>
-                <Search/>
-              </el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item label="状态">
-          <el-select v-model="filterForm.status" placeholder="请选择状态" clearable style="width: 150px">
-            <el-option label="等待中" value="PENDING"/>
-            <el-option label="训练中" value="RUNNING"/>
-            <el-option label="已完成" value="COMPLETED"/>
-            <el-option label="已失败" value="FAILED"/>
-            <el-option label="已取消" value="CANCELLED"/>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
-          <el-button @click="resetFilter" :icon="Refresh">重置</el-button>
-          <el-button type="success" @click="showCreateDialog" :icon="Plus">新建训练任务</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 任务列表 -->
-    <el-card class="table-card">
+      <!-- 任务列表 -->
+      <el-card class="table-card modern-card" shadow="hover">
       <el-table
           v-loading="loading"
           :data="taskList"
@@ -843,11 +866,12 @@
         </div>
       </template>
     </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup>
-import {ref, reactive, onMounted, computed} from 'vue'
+import {ref, reactive, onMounted, computed, watch, nextTick} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {HeatmapChart} from 'echarts/charts'
 import {VisualMapComponent} from 'echarts/components'
@@ -885,6 +909,25 @@ import VChart from 'vue-echarts'
 import dayjs from 'dayjs'
 import {getAvailableDatasets} from '@/api/dataset'
 import {getBatchProgress} from '@/api/training'
+
+// 粒子效果样式
+const getParticleStyle = (index) => {
+  const size = Math.random() * 3 + 1
+  const x = Math.random() * 100
+  const y = Math.random() * 100
+  const duration = Math.random() * 3 + 2
+  const delay = Math.random() * 2
+
+  return {
+    width: `${size}px`,
+    height: `${size}px`,
+    left: `${x}%`,
+    top: `${y}%`,
+    animationDuration: `${duration}s`,
+    animationDelay: `${delay}s`,
+    opacity: Math.random() * 0.3 + 0.1
+  }
+}
 
 // 注册ECharts组件
 use([
@@ -1723,59 +1766,285 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .training-management {
-  padding: 20px;
-}
+  position: relative;
+  min-height: 100vh;
+  padding: 24px;
+  padding-bottom: 60px;
+  overflow: visible;
+  width: 100%;
+  box-sizing: border-box;
 
-.stats-row {
-  margin-bottom: 20px;
-}
+  // 背景粒子效果
+  .background-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
 
-.stat-card {
-  :deep(.el-card__body) {
-    padding: 20px;
-  }
-
-  .stat-content {
-    display: flex;
-    align-items: center;
-
-    .stat-icon {
-      font-size: 40px;
-      margin-right: 20px;
-      color: #409EFF;
-    }
-
-    .stat-info {
-      flex: 1;
-
-      .stat-value {
-        font-size: 28px;
-        font-weight: bold;
-        color: #303133;
-        margin-bottom: 4px;
-      }
-
-      .stat-label {
-        font-size: 14px;
-        color: #909399;
-      }
+    .particle {
+      position: absolute;
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      animation: float-particle infinite ease-in-out;
     }
   }
 
-  &.primary .stat-icon {
-    color: #409EFF;
+  // 背景装饰圆形
+  .background-circles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float-circle 20s ease-in-out infinite;
+
+      &.circle-top {
+        width: 600px;
+        height: 600px;
+        background: rgba(147, 197, 253, 0.2);
+        top: -200px;
+        right: -150px;
+      }
+
+      &.circle-bottom {
+        width: 500px;
+        height: 500px;
+        background: rgba(191, 219, 254, 0.2);
+        bottom: -150px;
+        left: -100px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+      }
+
+      &.circle-middle {
+        width: 400px;
+        height: 400px;
+        background: rgba(224, 242, 254, 0.3);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-duration: 30s;
+      }
+    }
   }
 
-  &.success .stat-icon {
-    color: #67C23A;
+  // 内容区域
+  .content-wrapper {
+    position: relative;
+    z-index: 1;
   }
 
-  &.warning .stat-icon {
-    color: #E6A23C;
+  // 头部Logo区域
+  .header-section {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-top: 10px;
+
+    .logo-container {
+      margin-bottom: 10px;
+
+      .logo-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border: 3px solid rgba(59, 130, 246, 0.2);
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: scale(1.05);
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .el-icon {
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+      }
+    }
+
+    .header-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0 0 10px 0;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 1px;
+    }
+
+    .header-subtitle {
+      font-size: 18px;
+      color: #475569;
+      font-weight: 500;
+      margin: 0;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
   }
 
-  &.info .stat-icon {
-    color: #909399;
+  // 深色模式适配
+  html.dark & {
+    .header-title {
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .header-subtitle {
+      color: #e2e8f0;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  // 通用卡片样式
+  .modern-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      background: rgba(255, 255, 255, 0.98);
+    }
+  }
+
+  .search-card {
+    margin-bottom: 24px;
+    padding: 8px 12px;
+    overflow: visible;
+
+    :deep(.el-card__body) {
+      padding: 0;
+    }
+
+    :deep(.el-form) {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      width: 100%;
+
+      .el-form-item {
+        margin-bottom: 0;
+        margin-right: 20px;
+        flex-shrink: 0;
+        white-space: nowrap;
+
+        &:first-child {
+          margin-left: 20px;
+        }
+      }
+    }
+  }
+
+  .stats-row {
+    margin-bottom: 24px;
+
+    .stat-card {
+      position: relative;
+      height: 130px;
+      border-radius: 24px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+
+        .stat-background {
+          transform: scale(1.1);
+        }
+      }
+
+      .stat-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        height: 100%;
+        color: white;
+
+        .stat-icon {
+          font-size: 32px;
+          margin-bottom: 0;
+          filter: brightness(1.8);
+        }
+
+        .stat-label {
+          font-size: 14px;
+          opacity: 1;
+          font-weight: 400;
+          margin-bottom: 6px;
+          margin-top: -6px;
+          text-align: center;
+        }
+
+        .stat-value {
+          font-size: 26px;
+          font-weight: 700;
+          line-height: 1;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      }
+
+      // 第2个和第4个卡片的图标更亮
+      &.success .stat-content .stat-icon,
+      &.danger .stat-content .stat-icon {
+        filter: brightness(2.2);
+      }
+
+      // 不同主题色
+      &.primary .stat-background {
+        background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+      }
+
+      &.success .stat-background {
+        background: linear-gradient(135deg, #67C23A 0%, #85ce61 100%);
+      }
+
+      &.warning .stat-background {
+        background: linear-gradient(135deg, #E6A23C 0%, #ebb563 100%);
+      }
+
+      &.danger .stat-background {
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+      }
+    }
   }
 }
 
@@ -1789,9 +2058,9 @@ onUnmounted(() => {
   }
 }
 
-.filter-card, .table-card {
-  margin-bottom: 20px;
-}
+  .table-card {
+    margin-bottom: 24px;
+  }
 
 .progress-text {
   font-size: 12px;
@@ -1988,5 +2257,24 @@ onUnmounted(() => {
   letter-spacing: 0;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
   pointer-events: none;
+}
+
+// 动画效果
+@keyframes float-particle {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(20px, -20px);
+  }
+}
+
+@keyframes float-circle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
 }
 </style>

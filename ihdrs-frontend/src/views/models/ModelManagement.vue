@@ -2,133 +2,156 @@
 
 <template>
   <div class="model-management">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <h1>模型管理</h1>
-      <div class="header-actions">
-        <el-button type="primary" icon="Refresh" @click="loadModelList">
-          刷新
-        </el-button>
-      </div>
+    <!-- 动态背景粒子效果 -->
+    <div class="background-particles">
+      <div v-for="i in 20" :key="i" class="particle" :style="getParticleStyle(i)"></div>
     </div>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" class="statistics-row">
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon primary">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
-            <div class="stat-text">
-              <div class="stat-value">{{ statistics.totalModels }}</div>
+    <!-- 背景装饰圆形 -->
+    <div class="background-circles">
+      <div class="circle circle-top"></div>
+      <div class="circle circle-bottom"></div>
+      <div class="circle circle-middle"></div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-wrapper">
+      <!-- 头部Logo区域 -->
+      <div class="header-section">
+        <div class="logo-container">
+          <div class="logo-circle">
+            <el-icon size="50" color="#2563eb">
+              <DataAnalysis />
+            </el-icon>
+          </div>
+        </div>
+        <h1 class="header-title">模型管理</h1>
+        <p class="header-subtitle">Model Management</p>
+      </div>
+
+      <!-- 搜索筛选区域 -->
+      <el-card class="search-card modern-card" shadow="hover">
+        <el-form :model="filterForm" inline>
+          <el-form-item label="搜索">
+            <el-input
+                v-model="filterForm.keyword"
+                placeholder="模型名称/版本/描述"
+                clearable
+                style="width: 250px"
+                @keyup.enter="handleSearch"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select
+                v-model="filterForm.status"
+                placeholder="全部状态"
+                clearable
+                style="width: 150px"
+            >
+              <el-option label="训练中" value="TRAINING" />
+              <el-option label="已完成" value="COMPLETED" />
+              <el-option label="活跃中" value="ACTIVE" />
+              <el-option label="已停用" value="DISABLED" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="模型类型">
+            <el-select
+                v-model="filterForm.modelType"
+                placeholder="全部类型"
+                clearable
+                style="width: 150px"
+            >
+              <el-option label="CNN" value="CNN" />
+              <el-option label="ResNet" value="ResNet" />
+              <el-option label="LeNet" value="LeNet" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch" icon="Search">
+              搜索
+            </el-button>
+            <el-button @click="resetFilter" icon="Refresh">
+              重置
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <!-- 统计卡片 -->
+      <el-row :gutter="20" class="stats-row">
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card primary">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <DataAnalysis/>
+                </el-icon>
+              </div>
               <div class="stat-label">总模型数</div>
+              <div class="stat-value">{{ statistics.totalModels }}</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon success">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-text">
-              <div class="stat-value">{{ statistics.activeModels }}</div>
+        </el-col>
+
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card success">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <CircleCheck/>
+                </el-icon>
+              </div>
               <div class="stat-label">活跃模型</div>
+              <div class="stat-value">{{ statistics.activeModels }}</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon warning">
-              <el-icon><Timer /></el-icon>
-            </div>
-            <div class="stat-text">
-              <div class="stat-value">{{ (statistics.avgAccuracy * 100).toFixed(2) }}%</div>
+        </el-col>
+
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card warning">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <Timer/>
+                </el-icon>
+              </div>
               <div class="stat-label">平均准确率</div>
+              <div class="stat-value">{{ (statistics.avgAccuracy * 100).toFixed(2) }}%</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon info">
-              <el-icon><TrendCharts /></el-icon>
-            </div>
-            <div class="stat-text">
-              <div class="stat-value">{{ (statistics.bestAccuracy * 100).toFixed(2) }}%</div>
+        </el-col>
+
+        <el-col :xs="12" :sm="6" :md="6" :lg="6" :xl="6">
+          <div class="stat-card danger">
+            <div class="stat-background"></div>
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon>
+                  <TrendCharts/>
+                </el-icon>
+              </div>
               <div class="stat-label">最高准确率</div>
+              <div class="stat-value">{{ (statistics.bestAccuracy * 100).toFixed(2) }}%</div>
             </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </el-col>
+      </el-row>
 
-    <!-- 搜索和筛选 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filterForm" class="filter-form">
-        <el-form-item label="搜索">
-          <el-input
-              v-model="filterForm.keyword"
-              placeholder="模型名称/版本/描述"
-              clearable
-              style="width: 250px"
-              @keyup.enter="handleSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select
-              v-model="filterForm.status"
-              placeholder="全部状态"
-              clearable
-              style="width: 150px"
-          >
-            <el-option label="训练中" value="TRAINING" />
-            <el-option label="已完成" value="COMPLETED" />
-            <el-option label="活跃中" value="ACTIVE" />
-            <el-option label="已停用" value="DISABLED" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="模型类型">
-          <el-select
-              v-model="filterForm.modelType"
-              placeholder="全部类型"
-              clearable
-              style="width: 150px"
-          >
-            <el-option label="CNN" value="CNN" />
-            <el-option label="ResNet" value="ResNet" />
-            <el-option label="LeNet" value="LeNet" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch" icon="Search">
-            搜索
-          </el-button>
-          <el-button @click="resetFilter" icon="Refresh">
-            重置
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 模型列表 -->
-    <el-card class="table-card">
+      <!-- 模型列表 -->
+      <el-card class="table-card modern-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>模型列表</span>
-          <div class="header-buttons">
+          <span class="title">模型列表</span>
+          <div class="actions">
             <el-button
                 type="danger"
-                size="small"
                 :disabled="selectedModels.length === 0"
                 @click="handleBatchDelete"
             >
@@ -502,6 +525,7 @@
         <el-button @click="compareDialog.visible = false">关闭</el-button>
       </template>
     </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -530,6 +554,25 @@ import {
   compareModels,
   getModelStatistics
 } from '@/api/model'
+
+// 粒子效果样式
+const getParticleStyle = (index) => {
+  const size = Math.random() * 3 + 1
+  const x = Math.random() * 100
+  const y = Math.random() * 100
+  const duration = Math.random() * 3 + 2
+  const delay = Math.random() * 2
+
+  return {
+    width: `${size}px`,
+    height: `${size}px`,
+    left: `${x}%`,
+    top: `${y}%`,
+    animationDuration: `${duration}s`,
+    animationDelay: `${delay}s`,
+    opacity: Math.random() * 0.3 + 0.1
+  }
+}
 
 // 统计数据
 const statistics = reactive({
@@ -844,98 +887,302 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .model-management {
-  padding: 20px;
+  position: relative;
+  min-height: 100vh;
+  padding: 24px;
+  padding-bottom: 60px;
+  overflow: visible;
+  width: 100%;
+  box-sizing: border-box;
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  // 背景粒子效果
+  .background-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
 
-    h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 600;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 10px;
+    .particle {
+      position: absolute;
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      animation: float-particle infinite ease-in-out;
     }
   }
 
-  .statistics-row {
-    margin-bottom: 20px;
+  // 背景装饰圆形
+  .background-circles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
 
-    .stat-card {
-      .stat-content {
-        display: flex;
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float-circle 20s ease-in-out infinite;
+
+      &.circle-top {
+        width: 600px;
+        height: 600px;
+        background: rgba(147, 197, 253, 0.2);
+        top: -200px;
+        right: -150px;
+      }
+
+      &.circle-bottom {
+        width: 500px;
+        height: 500px;
+        background: rgba(191, 219, 254, 0.2);
+        bottom: -150px;
+        left: -100px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+      }
+
+      &.circle-middle {
+        width: 400px;
+        height: 400px;
+        background: rgba(224, 242, 254, 0.3);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-duration: 30s;
+      }
+    }
+  }
+
+  // 内容区域
+  .content-wrapper {
+    position: relative;
+    z-index: 1;
+  }
+
+  // 头部Logo区域
+  .header-section {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-top: 10px;
+
+    .logo-container {
+      margin-bottom: 10px;
+
+      .logo-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        display: inline-flex;
         align-items: center;
-        gap: 15px;
+        justify-content: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border: 3px solid rgba(59, 130, 246, 0.2);
+        transition: all 0.3s ease;
 
-        .stat-icon {
-          width: 60px;
-          height: 60px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 30px;
-
-          &.primary {
-            background: #ecf5ff;
-            color: #409eff;
-          }
-
-          &.success {
-            background: #f0f9ff;
-            color: #67c23a;
-          }
-
-          &.warning {
-            background: #fdf6ec;
-            color: #e6a23c;
-          }
-
-          &.info {
-            background: #f4f4f5;
-            color: #909399;
-          }
+        &:hover {
+          transform: scale(1.05);
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
         }
 
-        .stat-text {
-          flex: 1;
+        .el-icon {
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+      }
+    }
 
-          .stat-value {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 5px;
-          }
+    .header-title {
+      font-size: 36px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0 0 10px 0;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 1px;
+    }
 
-          .stat-label {
-            font-size: 14px;
-            color: #909399;
-          }
+    .header-subtitle {
+      font-size: 18px;
+      color: #475569;
+      font-weight: 500;
+      margin: 0;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // 深色模式适配
+  html.dark & {
+    .header-title {
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .header-subtitle {
+      color: #e2e8f0;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  // 通用卡片样式
+  .modern-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      background: rgba(255, 255, 255, 0.98);
+    }
+  }
+
+  .search-card {
+    margin-bottom: 24px;
+    padding: 8px 12px;
+    overflow: visible;
+
+    :deep(.el-card__body) {
+      padding: 0;
+    }
+
+    :deep(.el-form) {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      width: 100%;
+
+      .el-form-item {
+        margin-bottom: 0;
+        margin-right: 20px;
+        flex-shrink: 0;
+        white-space: nowrap;
+
+        &:first-child {
+          margin-left: 20px;
         }
       }
     }
   }
 
-  .filter-card {
-    margin-bottom: 20px;
+  .stats-row {
+    margin-bottom: 24px;
 
-    .filter-form {
-      margin-bottom: 0;
+    .stat-card {
+      position: relative;
+      height: 130px;
+      border-radius: 24px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+
+        .stat-background {
+          transform: scale(1.1);
+        }
+      }
+
+      .stat-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        height: 100%;
+        color: white;
+
+        .stat-icon {
+          font-size: 32px;
+          margin-bottom: 0;
+          filter: brightness(1.8);
+        }
+
+        .stat-label {
+          font-size: 14px;
+          opacity: 1;
+          font-weight: 400;
+          margin-bottom: 6px;
+          margin-top: -6px;
+          text-align: center;
+        }
+
+        .stat-value {
+          font-size: 26px;
+          font-weight: 700;
+          line-height: 1;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      }
+
+      // 第2个和第4个卡片的图标更亮
+      &.success .stat-content .stat-icon,
+      &.danger .stat-content .stat-icon {
+        filter: brightness(2.2);
+      }
+
+      // 不同主题色
+      &.primary .stat-background {
+        background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+      }
+
+      &.success .stat-background {
+        background: linear-gradient(135deg, #67C23A 0%, #85ce61 100%);
+      }
+
+      &.warning .stat-background {
+        background: linear-gradient(135deg, #E6A23C 0%, #ebb563 100%);
+      }
+
+      &.danger .stat-background {
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+      }
     }
   }
 
   .table-card {
+    margin-bottom: 24px;
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
 
-      .header-buttons {
+      .title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #303133;
+      }
+
+      .actions {
         display: flex;
         gap: 10px;
       }
@@ -971,6 +1218,25 @@ onMounted(() => {
 
   .text-danger {
     color: #f56c6c;
+  }
+}
+
+// 动画效果
+@keyframes float-particle {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(20px, -20px);
+  }
+}
+
+@keyframes float-circle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
   }
 }
 </style>
