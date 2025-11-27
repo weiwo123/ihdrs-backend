@@ -156,9 +156,9 @@ const DrawingCanvas = ({ onDrawingComplete }) => {
           maximumValue={30}
           value={brushSize}
           onValueChange={setBrushSize}
-          minimumTrackTintColor="#6366f1"
-          maximumTrackTintColor="#d1d5db"
-          thumbTintColor="#6366f1"
+          minimumTrackTintColor="#2563eb"
+          maximumTrackTintColor="#e2e8f0"
+          thumbTintColor="#2563eb"
         />
         <Text style={styles.brushSizeValue}>{Math.round(brushSize)}px</Text>
       </View>
@@ -166,13 +166,13 @@ const DrawingCanvas = ({ onDrawingComplete }) => {
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.clearButton} onPress={clearCanvas}>
-          <Text style={styles.buttonText}>🗑️ 重置</Text>
+          <Text style={styles.clearButtonText}>重置</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.recognizeButton}
           onPress={captureDrawing}
         >
-          <Text style={styles.buttonText}>🔍 识别</Text>
+          <Text style={styles.buttonText}>识别</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -187,9 +187,14 @@ const styles = StyleSheet.create({
   canvasContainer: {
     backgroundColor: CANVAS_BACKGROUND_COLOR, // Set background color here
     borderWidth: 2,
-    borderColor: '#333',
-    borderRadius: 10,
+    borderColor: '#e2e8f0',
+    borderRadius: 20,
     overflow: 'hidden', // Ensures the Svg corners are rounded
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   canvas: {
     // Background color is inherited from the container
@@ -197,14 +202,15 @@ const styles = StyleSheet.create({
   brushSizeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 15,
+    marginTop: 20,
     paddingHorizontal: 10,
+    width: '100%',
   },
   brushSizeLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#374151',
-    marginRight: 10,
+    color: '#334155',
+    marginRight: 12,
     marginLeft: 10,
   },
   slider: {
@@ -212,37 +218,65 @@ const styles = StyleSheet.create({
     height: 40,
   },
   brushSizeValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#6366f1',
-    marginLeft: 10,
-    minWidth: 45,
+    color: '#2563eb',
+    marginLeft: 12,
+    minWidth: 50,
   },
   buttonContainer: {
     flexDirection: 'row',
-    marginTop: 20,
-    gap: 15,
+    marginTop: 24,
+    gap: 12,
+    width: '100%',
+    paddingHorizontal: 10,
   },
   clearButton: {
-    backgroundColor: '#ff6b6b',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 120,
+    flex: 1,
+    backgroundColor: '#64748b',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#64748b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   recognizeButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 120,
+    flex: 1,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  clearButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    letterSpacing: 1,
   },
 });
 
