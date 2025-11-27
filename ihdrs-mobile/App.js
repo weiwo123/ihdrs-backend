@@ -31,6 +31,7 @@ export default function App() {
     };
 
     const handleNavigateToRegister = () => {
+        setInitialCredentials(null);
         setCurrentScreen('register');
     };
 
@@ -47,6 +48,7 @@ export default function App() {
     };
 
     const handleCancelAuth = () => {
+        setInitialCredentials(null);
         setCurrentScreen('main');
     };
 
